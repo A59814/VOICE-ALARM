@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Global VoxAlarm Pro</title>
+<meta name="theme-color" content="#66a6ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VoxAlarm">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+    :root {
+        --bg-grad: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+        --panel-bg: rgba(255, 255, 255, 0.6);
+        --panel-border: rgba(255, 255, 255, 0.8);
+        --text-main: #2d3748;
+        --text-mut: #718096;
+        --primary: #2b6cb0;
+        --danger: #e53e3e;
+        --success: #38a169;
+        --card-bg: rgba(255, 255, 255, 0.8);
+    }
+    [data-theme="dark"] {
+        --bg-grad: linear-gradient(120deg, #0f172a 0%, #1e1b4b 100%);
+        --panel-bg: rgba(30, 41, 59, 0.7);
+        --panel-border: rgba(255, 255, 255, 0.1);
+        --text-main: #f8fafc;
+        --text-mut: #94a3b8;
+        --primary: #60a5fa;
+        --danger: #f87171;
+        --success: #34d399;
+        --card-bg: rgba(15, 23, 42, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+    button { position: relative; overflow: hidden; }
+
+    html { background: #a8edea; }
+    body {
+        font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; background: var(--bg-grad); background-attachment: fixed;
+        height: 100vh; height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        color: var(--text-main); overflow-x: hidden; overflow-y: auto;
+        padding: calc(15px + env(safe-area-inset-top, 0px)) 0 220px;
+        transition: background 0.5s, color 0.5s;
+    }
+
+    #splashScreen {
+        position: fixed; inset: 0; z-index: 9999; background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+    .splash-icon { font-size: 100px; margin-bottom: 20px; animation: ring 1s infinite ease-in-out; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)); }
+    @keyframes ring { 0%,100%{transform:rotate(0);} 25%{transform:rotate(15deg);} 75%{transform:rotate(-15deg);} }
+    .splash-title { font-size: 40px; font-weight: 900; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 10px; }
+    .splash-subtitle { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.9); animation: pulseText 2s infinite; text-align: center; padding: 0 10px; }
+    @keyframes pulseText { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+    .splash-hide { transform: translateY(-100%); pointer-events: none; }
+
+    .glass-panel {
+        position: relative; z-index: 10; background: var(--panel-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--panel-border); border-radius: 35px; width: 92%; max-width: 400px; flex-shrink: 0;
+        padding: 25px 20px 30px 20px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        transition: background 0.5s, border 0.5s, opacity 0.3s;
+    }
+
+    .top-bar { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .lang-selector select, #langSelect { background: rgba(255,255,255,0.2); border: 1px solid var(--panel-border); padding: 6px 12px; border-radius: 20px; font-family: inherit; font-weight: 700; color: var(--text-main); outline: none; cursor: pointer; }
+    #langSelect option, #setSnoozeTime option { color: #222; }
+    .settings-btn { background: rgba(255,255,255,0.2); border: 1px solid var(--panel-border); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: transform 0.3s; }
+    .settings-btn:active { transform: rotate(90deg); }
+
+    #currentTime { font-size: 65px; font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--primary); text-shadow: 0 4px 10px rgba(43, 108, 176, 0.15); font-variant-numeric: tabular-nums; margin-top: 30px; white-space: nowrap; direction: ltr; }
+    #currentDate { font-size: 15px; color: var(--text-mut); margin-top: 5px; font-weight: 700; }
+
+    .divider { width: 80%; height: 1px; background: var(--panel-border); margin: 15px 0; }
+
+    .alarm-setup { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .input-group { display: flex; gap: 10px; }
+    .input-group input { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--panel-border); padding: 12px; border-radius: 12px; font-family: inherit; font-weight: 700; color: var(--text-main); outline: none; text-align: center; font-size: 16px; user-select: text; -webkit-user-select: text; }
+
+    .days-row { display: flex; justify-content: space-between; width: 100%; margin-top: 5px; direction: ltr; }
+    .day-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--card-bg); color: var(--text-mut); font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: inherit; }
+    .day-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(43, 108, 176, 0.3); }
+
+    .alarm-status { text-align: center; margin: 15px 0; display: flex; flex-direction: column; align-items: center; }
+    .alarm-status .time { font-size: 45px; font-weight: 900; color: var(--danger); text-shadow: 0 4px 15px rgba(229, 62, 62, 0.2); direction: ltr; }
+    .alarm-status .msg { font-size: 13px; color: var(--text-mut); font-weight: 700; text-align: center; line-height: 1.5; }
+    .alarm-status .label-display { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 5px; }
+    .alarm-status .note { font-size: 11px; color: var(--text-mut); margin-top: 6px; opacity: 0.85; display: none; }
+    #cancelAlarmBtn { display: none; margin-top: 10px; background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 16px; border-radius: 20px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: 12px; }
+
+    .music-selector { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; background: var(--card-bg); padding: 12px; border-radius: 15px; border: 1px solid var(--panel-border); width: 100%; }
+    .upload-btn { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 10px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: 14px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .file-name { font-size: 12px; color: var(--text-main); text-align: center; font-weight: 700; display: none; word-break: break-all; }
+    .test-btn { background: transparent; color: var(--success); border: 1px solid var(--success); border-radius: 12px; padding: 6px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: 12px; display: none; }
+
+    .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.4); transform: scale(0); animation: rippleAnim 0.6s linear; pointer-events: none; }
+    @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+    .mic-container { position: fixed; bottom: calc(25px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; }
+    #micBtn {
+        width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%); border: 6px solid white;
+        cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(255, 154, 158, 0.4);
+        transition: all 0.2s; animation: idlePulse 2s infinite;
+    }
+    @keyframes idlePulse { 0% { box-shadow: 0 0 0 0 rgba(255, 154, 158, 0.5); } 70% { box-shadow: 0 0 0 20px rgba(255, 154, 158, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 154, 158, 0); } }
+    #micBtn:active { transform: scale(0.9); animation: none; }
+    #micBtn svg { width: 55px; height: 55px; fill: white; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); pointer-events: none; }
+    #micBtn.listening { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); animation: listeningPulse 1.5s infinite; }
+    @keyframes listeningPulse { 0% { box-shadow: 0 0 0 0 rgba(253, 160, 133, 0.7); } 50% { box-shadow: 0 0 0 40px rgba(253, 160, 133, 0); } 100% { box-shadow: 0 0 0 0 rgba(253, 160, 133, 0); } }
+
+    .hint { font-size: 12px; color: var(--text-mut); margin-top: 10px; text-align: center; font-weight: 700; }
+
+    #confirmPanel { display: none; flex-direction: column; align-items: center; width: 90%; max-width: 380px; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 25px; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); z-index: 50; border: 1px solid var(--panel-border); }
+    @keyframes popIn { from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+    .confirm-card { background: var(--card-bg); border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 20px; text-align: center; }
+    .confirm-card .parsed-time { font-size: 50px; font-weight: 900; color: var(--success); margin: 10px 0; direction: ltr; }
+    .btn-confirm { width: 100%; padding: 16px; border-radius: 16px; font-size: 20px; font-weight: 900; font-family: inherit; border: none; cursor: pointer; background: var(--success); color: white; box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3); margin-bottom: 10px; }
+    .btn-retry { width: 100%; padding: 14px; border-radius: 16px; font-size: 16px; font-weight: 700; font-family: inherit; border: 1px solid var(--panel-border); cursor: pointer; background: transparent; color: var(--text-main); }
+    #manualBtn { margin-top: 15px; border: none; background: rgba(0,0,0,0.05); color: var(--text-mut); font-size: 13px; padding: 10px; }
+    #manualTimeInput { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; bottom: 0; }
+
+    #ringingScreen { position: fixed; inset: 0; background: #ff4757; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; animation: flash 1s infinite alternate; color: white; }
+    @keyframes flash { from { background: #ff4757; } to { background: #c0392b; } }
+    #ringingScreen h1 { font-size: 80px; margin-bottom: 10px; animation: shake 0.5s infinite; }
+    @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-15deg); } 100% { transform: rotate(0deg); } }
+    #ringingLabel { color: rgba(255,255,255,0.9); font-size: 24px; margin-bottom: 30px; }
+    .ringing-btns { display: flex; gap: 15px; width: 100%; max-width: 300px; }
+    .btn-snooze { flex: 1; padding: 18px 0; font-size: 20px; font-weight: 900; font-family: inherit; background: #f1c40f; color: #333; border: none; border-radius: 20px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    .btn-stop { flex: 1; padding: 18px 0; font-size: 20px; font-weight: 900; font-family: inherit; background: white; color: #ff4757; border: none; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); cursor: pointer; }
+
+    #settingsModal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 200; display: none; justify-content: center; align-items: center; }
+    .settings-content { background: var(--panel-bg); border: 1px solid var(--panel-border); width: 90%; max-width: 380px; border-radius: 30px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); max-height: 90dvh; overflow-y: auto; color: var(--text-main); }
+    [data-theme="dark"] .settings-content { background: #1e293b; }
+    html:not([data-x]) body:not([data-theme="dark"]) .settings-content { background: rgba(255,255,255,0.95); }
+    .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .close-settings { background: var(--card-bg); border: none; width: 36px; height: 36px; border-radius: 50%; font-weight: 900; cursor: pointer; color: var(--text-main); }
+    .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--panel-border); gap: 10px; }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-weight: 700; font-size: 15px; }
+    .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    #mathModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    .math-question { font-size: 60px; font-weight: 900; margin-bottom: 20px; direction: ltr; }
+    .math-input { width: 200px; padding: 15px; font-size: 30px; text-align: center; border-radius: 15px; border: none; outline: none; font-weight: 900; user-select: text; -webkit-user-select: text; }
+    .math-submit { margin-top: 20px; padding: 15px 50px; font-size: 24px; font-weight: 900; font-family: inherit; background: var(--success); border: none; color: white; border-radius: 20px; cursor: pointer; }
+
+    .hidden { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+    <div id="splashScreen">
+        <div class="splash-icon">⏰</div>
+        <div class="splash-title">VoxAlarm Pro</div>
+        <div class="splash-subtitle">Speak to Wake Up · تكلم ليضبط منبهك</div>
+    </div>
+
+    <div class="glass-panel" id="mainPanel">
+        <div class="top-bar">
+            <select id="langSelect" onchange="changeLanguage()">
+                <option value="ar-SA">🇸🇦 العربية</option>
+                <option value="en-US">🇺🇸 English</option>
+                <option value="es-ES">🇪🇸 Español</option>
+                <option value="fr-FR">🇫🇷 Français</option>
+            </select>
+            <div class="settings-btn" onclick="openSettings()">⚙️</div>
+        </div>
+
+        <div id="currentTime">00:00</div>
+        <div id="currentDate">...</div>
+
+        <div class="divider"></div>
+
+        <div class="alarm-setup">
+            <div class="input-group">
+                <input type="text" id="alarmLabelInput" placeholder="اسم المنبه (اختياري)" maxlength="40">
+            </div>
+            <div class="days-row" id="daysRow"></div>
+        </div>
+
+        <div class="alarm-status">
+            <div class="label-display" id="alarmLabelDisplay"></div>
+            <div class="time" id="alarmTimeDisplay">--:--</div>
+            <div class="msg" id="statusMsg">اضغط على المايك وقل الوقت</div>
+            <div class="note" id="keepOpenNote"></div>
+            <button id="cancelAlarmBtn" onclick="cancelAlarm(event)">إلغاء المنبه ✕</button>
+        </div>
+
+        <div class="music-selector">
+            <button class="upload-btn" onclick="document.getElementById('audioUpload').click()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span id="uploadLabel">اختر نغمة من هاتفك</span>
+            </button>
+            <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
+            <div class="file-name" id="fileNameDisplay"></div>
+            <button class="test-btn" id="testAudioBtn" onclick="testCustomAudio(event)">▶ تجربة الصوت</button>
+        </div>
+
+        <button class="btn-retry" id="manualBtn" onclick="openManualPicker(event)">أو اختر الوقت يدوياً</button>
+        <input type="time" id="manualTimeInput" onchange="handleManualTime()">
+    </div>
+
+    <div class="mic-container" id="micContainer">
+        <button id="micBtn" onclick="startListening(event)" aria-label="microphone">
+            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
+        <div class="hint" id="hintText">قل: "8 صباحاً"</div>
+    </div>
+
+    <div id="confirmPanel">
+        <div class="confirm-card">
+            <div class="parsed-text" id="lblConfirm">لقد فهمت أنك تريد الاستيقاظ الساعة:</div>
+            <div class="parsed-time" id="parsedTimeDisplay">08:00</div>
+            <div class="parsed-text" id="parsedPeriodDisplay">صباحاً</div>
+        </div>
+        <button class="btn-confirm" id="confirmBtn" onclick="confirmAlarm(event)">موافق (تفعيل المنبه) ✓</button>
+        <button class="btn-retry" id="retryBtn" onclick="retryListening(event)">إعادة المحاولة 🎤</button>
+    </div>
+
+    <div id="ringingScreen">
+        <h1>⏰</h1>
+        <h2 id="ringingLabel">استيقظ! حان الوقت</h2>
+        <div class="ringing-btns">
+            <button class="btn-snooze" id="snoozeBtn" onclick="snoozeAlarm()">غفوة 💤</button>
+            <button class="btn-stop" id="stopBtn" onclick="attemptStopAlarm()">إيقاف</button>
+        </div>
+    </div>
+
+    <div id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2 style="font-size:20px; font-weight:900;" id="settingsTitle">الإعدادات</h2>
+                <button class="close-settings" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="setting-row"><span class="setting-label" data-i="dark">الوضع الليلي</span><label class="switch"><input type="checkbox" id="setDarkMode"><span class="slider"></span></label></div>
+            <div class="setting-row"><span class="setting-label" data-i="h24">نظام 24 ساعة</span><label class="switch"><input type="checkbox" id="set24Hour" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><span class="setting-label" data-i="fade">تصاعد الصوت تدريجياً</span><label class="switch"><input type="checkbox" id="setFadeIn" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><span class="setting-label" data-i="math">إيقاف بالمعادلة الرياضية</span><label class="switch"><input type="checkbox" id="setMathStop"><span class="slider"></span></label></div>
+            <div class="setting-row"><span class="setting-label" data-i="shake">هز الهاتف لإيقاف المنبه</span><label class="switch"><input type="checkbox" id="setShakeStop"><span class="slider"></span></label></div>
+            <div class="setting-row">
+                <span class="setting-label" data-i="snooze">مدة الغفوة (بالدقائق)</span>
+                <select id="setSnoozeTime" style="padding:8px; border-radius:8px; font-family:inherit; font-weight:700;">
+                    <option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="mathModal">
+        <div class="math-question" id="mathQuestion">3 + 5 = ?</div>
+        <input type="number" inputmode="numeric" id="mathInput" class="math-input" placeholder="؟">
+        <button class="math-submit" id="mathSubmit" onclick="checkMath()">تأكيد</button>
+    </div>
+
+<script>
+    const locales = {
+        'ar-SA': { ask: 'اضغط على المايك وقل الوقت', hint: 'قل: "8 صباحاً"', cancel: 'إلغاء المنبه ✕', manual: 'أو اختر الوقت يدوياً', confirmMsg: 'لقد فهمت أنك تريد الاستيقاظ الساعة:', am: 'صباحاً', pm: 'مساءً', confirmBtn: 'موافق (تفعيل المنبه) ✓', retryBtn: 'إعادة المحاولة 🎤', listening: 'أنا أسمعك...', success: 'تم ضبط المنبه بنجاح!', error: 'لم أفهم الوقت، حاول مرة أخرى.', wakeUp: 'استيقظ! حان الوقت', lblPlaceholder: 'اسم المنبه (اختياري)', upload: 'اختر نغمة من هاتفك', test: '▶ تجربة الصوت', snoozeBtn: 'غفوة 💤', stopBtn: 'إيقاف', snoozed: 'غفوة لمدة {n} دقائق', keepOpen: 'اترك التطبيق مفتوحاً والشاشة مضاءة حتى يرنّ المنبه', settings: 'الإعدادات', dark: 'الوضع الليلي', h24: 'نظام 24 ساعة', fade: 'تصاعد الصوت تدريجياً', math: 'إيقاف بالمعادلة الرياضية', shake: 'هز الهاتف لإيقاف المنبه', snooze: 'مدة الغفوة (بالدقائق)', confirmTitle: 'تأكيد', noSpeech: 'المتصفح لا يدعم التعرف على الصوت.' },
+        'en-US': { ask: 'Tap the mic and say the time', hint: 'Say: "8 AM"', cancel: 'Cancel alarm ✕', manual: 'Or pick time manually', confirmMsg: 'I understood you want to wake up at:', am: 'AM', pm: 'PM', confirmBtn: 'Confirm ✓', retryBtn: 'Retry 🎤', listening: 'Listening...', success: 'Alarm set successfully!', error: 'Did not catch the time, try again.', wakeUp: "Wake up! It's time", lblPlaceholder: 'Alarm Label (Optional)', upload: 'Choose a ringtone from your phone', test: '▶ Test sound', snoozeBtn: 'Snooze 💤', stopBtn: 'Stop', snoozed: 'Snoozed for {n} min', keepOpen: 'Keep the app open and the screen on until the alarm rings', settings: 'Settings', dark: 'Dark mode', h24: '24-hour clock', fade: 'Gradual volume', math: 'Stop with a math problem', shake: 'Shake phone to stop', snooze: 'Snooze (minutes)', confirmTitle: 'Confirm', noSpeech: "Browser doesn't support speech recognition." },
+        'es-ES': { ask: 'Toca el micro y di la hora', hint: 'Di: "8 AM"', cancel: 'Cancelar alarma ✕', manual: 'O elegir hora manualmente', confirmMsg: 'Entendí que quieres despertar a las:', am: 'AM', pm: 'PM', confirmBtn: 'Confirmar ✓', retryBtn: 'Reintentar 🎤', listening: 'Escuchando...', success: '¡Alarma configurada!', error: 'No entendí la hora.', wakeUp: '¡Despierta! Es hora', lblPlaceholder: 'Etiqueta (Opcional)', upload: 'Elige un tono de tu teléfono', test: '▶ Probar sonido', snoozeBtn: 'Posponer 💤', stopBtn: 'Parar', snoozed: 'Pospuesta {n} min', keepOpen: 'Mantén la app abierta y la pantalla encendida hasta que suene', settings: 'Ajustes', dark: 'Modo oscuro', h24: 'Reloj de 24 horas', fade: 'Volumen gradual', math: 'Parar con una operación', shake: 'Agitar para parar', snooze: 'Posponer (minutos)', confirmTitle: 'Confirmar', noSpeech: 'El navegador no admite reconocimiento de voz.' },
+        'fr-FR': { ask: "Appuyez sur le micro et dites l'heure", hint: 'Dites: "8 AM"', cancel: "Annuler l'alarme ✕", manual: 'Ou choisir manuellement', confirmMsg: "J'ai compris que vous voulez vous réveiller à:", am: 'AM', pm: 'PM', confirmBtn: 'Confirmer ✓', retryBtn: 'Réessayer 🎤', listening: 'Écoute...', success: 'Alarme réglée !', error: "Je n'ai pas compris l'heure.", wakeUp: "Réveillez-vous ! C'est l'heure", lblPlaceholder: "Nom de l'alarme (Optionnel)", upload: 'Choisir une sonnerie du téléphone', test: '▶ Tester le son', snoozeBtn: 'Répéter 💤', stopBtn: 'Arrêter', snoozed: 'Reportée de {n} min', keepOpen: "Gardez l'app ouverte et l'écran allumé jusqu'à la sonnerie", settings: 'Réglages', dark: 'Mode sombre', h24: 'Horloge 24 h', fade: 'Volume progressif', math: 'Arrêter avec un calcul', shake: 'Secouer pour arrêter', snooze: 'Répétition (minutes)', confirmTitle: 'Confirmer', noSpeech: 'Reconnaissance vocale non prise en charge.' }
+    };
+
+    let settings = { darkMode: false, format24h: true, fadeIn: true, mathStop: false, shakeStop: false, snoozeTime: 5 };
+
+    let currentLang = 'ar-SA';
+    let targetAlarmTime = null;
+    let pendingAlarmTime = null;
+    let currentAlarmLabel = '';
+    let activeDays = new Set([0,1,2,3,4,5,6]);
+
+    let isAlarmRinging = false;
+    let audioCtx = null;
+    let alarmInterval = null, volumeInterval = null, vibrateInterval = null, snoozeTimeout = null;
+    let currentAudioVolume = 0.1;
+    let customAudioURL = null, customAudioPlayer = null;
+    let currentMathAnswer = 0;
+    let lastX = null, lastY = null, lastZ = null;
+    let lastFiredKey = '';
+    let wakeLock = null;
+
+    const dayNames = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+    const dayNamesEn = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const $ = id => document.getElementById(id);
+
+    // ---------- حفظ واسترجاع ----------
+    function saveState() {
+        try {
+            localStorage.setItem('voxalarm', JSON.stringify({
+                settings, lang: currentLang, days: [...activeDays], alarm: targetAlarmTime, label: currentAlarmLabel
+            }));
+        } catch (e) {}
+    }
+    function loadState() {
+        try {
+            const s = JSON.parse(localStorage.getItem('voxalarm') || 'null');
+            if (!s) return;
+            if (s.settings) settings = Object.assign(settings, s.settings);
+            if (locales[s.lang]) currentLang = s.lang;
+            if (Array.isArray(s.days) && s.days.length) activeDays = new Set(s.days);
+            if (s.alarm && Number.isInteger(s.alarm.hours) && Number.isInteger(s.alarm.minutes)) targetAlarmTime = s.alarm;
+            currentAlarmLabel = s.label || '';
+        } catch (e) {}
+    }
+
+    // ---------- فتح الصوت عند أول لمسة (مطلوب لرنين المنبه) ----------
+    function initAudio() {
+        if (!audioCtx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            audioCtx = new AC();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+    }
+    ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(ev =>
+        document.addEventListener(ev, () => { initAudio(); }, { passive: true })
+    );
+
+    // ---------- Wake Lock ----------
+    async function acquireWakeLock() {
+        try {
+            if ('wakeLock' in navigator && targetAlarmTime && !wakeLock && document.visibilityState === 'visible') {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            }
+        } catch (e) {}
+    }
+    function releaseWakeLock() {
+        if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+    }
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') { acquireWakeLock(); updateClock(); }
+    });
+
+    // ---------- التهيئة ----------
+    window.addEventListener('load', () => {
+        setTimeout(() => $('splashScreen').classList.add('splash-hide'), 2000);
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+
+    function renderDays() {
+        const row = $('daysRow');
+        row.innerHTML = '';
+        const names = currentLang === 'ar-SA' ? dayNames : dayNamesEn;
+        for (let i = 0; i < 7; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'day-btn' + (activeDays.has(i) ? ' active' : '');
+            btn.textContent = names[i];
+            btn.onclick = () => {
+                if (activeDays.has(i)) activeDays.delete(i); else activeDays.add(i);
+                renderDays(); saveState();
+            };
+            btn.addEventListener('click', createRipple);
+            row.appendChild(btn);
+        }
+    }
+
+    function createRipple(event) {
+        const button = event.currentTarget;
+        const circle = document.createElement('span');
+        const diameter = Math.max(button.clientWidth, button.clientHeight);
+        const radius = diameter / 2;
+        const rect = button.getBoundingClientRect();
+        circle.style.width = circle.style.height = diameter + 'px';
+        circle.style.left = (event.clientX - rect.left - radius) + 'px';
+        circle.style.top = (event.clientY - rect.top - radius) + 'px';
+        circle.classList.add('ripple');
+        const old = button.getElementsByClassName('ripple')[0];
+        if (old) old.remove();
+        button.appendChild(circle);
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
+    document.querySelectorAll('button').forEach(btn => btn.addEventListener('click', createRipple));
+
+    // ---------- الإعدادات ----------
+    function openSettings() {
+        $('setDarkMode').checked = settings.darkMode;
+        $('set24Hour').checked = settings.format24h;
+        $('setFadeIn').checked = settings.fadeIn;
+        $('setMathStop').checked = settings.mathStop;
+        $('setShakeStop').checked = settings.shakeStop;
+        $('setSnoozeTime').value = settings.snoozeTime;
+        $('settingsModal').style.display = 'flex';
+    }
+    function readSettings() {
+        settings.darkMode = $('setDarkMode').checked;
+        settings.format24h = $('set24Hour').checked;
+        settings.fadeIn = $('setFadeIn').checked;
+        settings.mathStop = $('setMathStop').checked;
+        settings.shakeStop = $('setShakeStop').checked;
+        settings.snoozeTime = parseInt($('setSnoozeTime').value) || 5;
+        applyTheme(); updateClock(); saveState();
+    }
+    ['setDarkMode', 'set24Hour', 'setFadeIn', 'setMathStop', 'setShakeStop', 'setSnoozeTime'].forEach(id =>
+        $(id).addEventListener('change', readSettings)
+    );
+    // iOS يتطلب إذناً صريحاً لمستشعر الحركة
+    $('setShakeStop').addEventListener('change', e => {
+        if (e.target.checked && typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission().then(r => {
+                if (r !== 'granted') { e.target.checked = false; readSettings(); }
+            }).catch(() => { e.target.checked = false; readSettings(); });
+        }
+    });
+    function closeSettings() { $('settingsModal').style.display = 'none'; }
+    $('settingsModal').addEventListener('click', e => { if (e.target.id === 'settingsModal') closeSettings(); });
+
+    function applyTheme() {
+        if (settings.darkMode) document.body.setAttribute('data-theme', 'dark');
+        else document.body.removeAttribute('data-theme');
+        document.querySelector('meta[name="theme-color"]').content = settings.darkMode ? '#0f172a' : '#66a6ff';
+    }
+
+    // ---------- الساعة ----------
+    function fmtTime(h, m) {
+        let ampm = '';
+        if (!settings.format24h) { ampm = h >= 12 ? ' PM' : ' AM'; h = h % 12 || 12; }
+        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ampm;
+    }
+
+    function updateClock() {
+        const now = new Date();
+        const locale = currentLang === 'ar-SA' ? 'ar-EG' : currentLang;
+        $('currentTime').textContent = fmtTime(now.getHours(), now.getMinutes());
+        $('currentDate').textContent = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+        if (targetAlarmTime) $('alarmTimeDisplay').textContent = fmtTime(targetAlarmTime.hours, targetAlarmTime.minutes);
+        checkAlarm(now);
+    }
+
+    // لا نعتمد على ثانية معيّنة (قد يتأخر المؤقت)؛ نطلق مرة واحدة خلال الدقيقة المطابقة
+    function checkAlarm(now) {
+        if (!targetAlarmTime || isAlarmRinging) return;
+        if (!activeDays.has(now.getDay())) return;
+        if (now.getHours() !== targetAlarmTime.hours || now.getMinutes() !== targetAlarmTime.minutes) return;
+        const key = now.toDateString() + ' ' + now.getHours() + ':' + now.getMinutes();
+        if (key === lastFiredKey) return;
+        lastFiredKey = key;
+        triggerAlarm();
+    }
+    setInterval(updateClock, 1000);
+
+    // ---------- التعرف على الصوت ----------
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    if (SR) {
+        recognition = new SR();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 3;
+        recognition.onresult = e => {
+            // نجرّب البدائل حتى يُفهم أحدها
+            const alts = Array.from(e.results[0]).map(a => a.transcript);
+            for (const t of alts) { if (parseVoiceInput(t)) return; }
+            showError();
+        };
+        recognition.onerror = () => { $('micBtn').classList.remove('listening'); showError(); };
+        recognition.onend = () => $('micBtn').classList.remove('listening');
+    }
+
+    function showError() {
+        $('statusMsg').textContent = locales[currentLang].error;
+        $('statusMsg').style.color = 'var(--danger)';
+    }
+
+    function startListening(event) {
+        if (event) event.preventDefault();
+        if (!recognition) { alert(locales[currentLang].noSpeech); return; }
+        initAudio();
+        recognition.lang = currentLang;
+        $('statusMsg').textContent = locales[currentLang].listening;
+        $('statusMsg').style.color = 'var(--text-mut)';
+        $('micBtn').classList.add('listening');
+        try { recognition.start(); }
+        catch (e) { try { recognition.stop(); } catch (_) {} }
+    }
+
+    const wordNums = { zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20, thirty:30, forty:40, fifty:50 };
+    function wordsToNumbers(text) {
+        let res = text;
+        for (const w in wordNums) res = res.replace(new RegExp('\\b' + w + '\\b', 'gi'), wordNums[w]);
+        return res;
+    }
+
+    function minutesUntil(h, m) {
+        const now = new Date();
+        const diff = (h * 60 + m - (now.getHours() * 60 + now.getMinutes()) + 1440) % 1440;
+        return diff || 1440;
+    }
+
+    // يعيد true إذا فُهم الوقت
+    function parseVoiceInput(text) {
+        let t = text.toLowerCase();
+        t = t.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+        t = wordsToNumbers(t);
+        // "8 و 30" / "8 and 30" → 8:30  (بدون المساس بحرف الواو داخل الكلمات)
+        t = t.replace(/(\d)\s*و\s*(\d)/g, '$1:$2').replace(/\s(?:و|and|y|et)\s+(?=\d)/g, ':');
+
+        let hours = null, minutes = 0, hadMinutes = false;
+        let m = t.match(/(\d{1,2})[\s:](\d{2})(?!\d)/);
+        if (m) { hours = +m[1]; minutes = +m[2]; hadMinutes = true; }
+        else if ((m = t.match(/\b(\d{1,2})(\d{2})\b/))) { hours = +m[1]; minutes = +m[2]; hadMinutes = true; }
+        else if ((m = t.match(/(\d{1,2})/))) { hours = +m[1]; }
+        if (hours === null) return false;
+
+        if (!hadMinutes) {
+            if (/(إلا|الا|menos|moins|to)\s*(ربع|cuarto|quart)/.test(t) && hours >= 1 && hours <= 12) {
+                hours = hours === 1 ? 12 : hours - 1; minutes = 45;
+            } else if (/نصف|media|half|demie/.test(t)) minutes = 30;
+            else if (/ربع|cuarto|quarter|quart/.test(t)) minutes = 15;
+        }
+        if (hours > 23 || minutes > 59) return false;
+
+        const night = /ليل|noche|nuit/.test(t);
+        const hasPM = night || /مساء|عصر|ظهر|(\d\s*|\b)p\.?\s?m\b|tarde|soir|apr[eè]s-midi/.test(t);
+        const hasAM = /صباح|فجر|(\d\s*|\b)a\.?\s?m\b|mañana|manana|matin/.test(t);
+
+        if (hasPM && !hasAM) {
+            if (night) { if (hours === 12) hours = 0; else if (hours >= 6 && hours < 12) hours += 12; }
+            else if (hours < 12) hours += 12;
+        } else if (hasAM && !hasPM) {
+            if (hours === 12) hours = 0;
+        } else if (hours >= 1 && hours <= 12) {
+            // بدون صباحاً/مساءً: نختار أقرب موعد قادم
+            const c1 = hours % 12, c2 = c1 + 12;
+            hours = minutesUntil(c1, minutes) <= minutesUntil(c2, minutes) ? c1 : c2;
+        }
+
+        pendingAlarmTime = { hours, minutes };
+        showConfirmPanel(hours, minutes);
+        return true;
+    }
+
+    // ---------- التأكيد ----------
+    function showConfirmPanel(h, m) {
+        $('mainPanel').classList.add('hidden');
+        $('micContainer').style.visibility = 'hidden';
+        $('confirmPanel').style.display = 'flex';
+        $('parsedTimeDisplay').textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        $('parsedPeriodDisplay').textContent = h >= 12 ? locales[currentLang].pm : locales[currentLang].am;
+        playBeep();
+    }
+    function hideConfirmPanel() {
+        $('confirmPanel').style.display = 'none';
+        $('mainPanel').classList.remove('hidden');
+        $('micContainer').style.visibility = 'visible';
+    }
+
+    function renderAlarmState() {
+        const d = locales[currentLang];
+        if (targetAlarmTime) {
+            $('alarmTimeDisplay').textContent = fmtTime(targetAlarmTime.hours, targetAlarmTime.minutes);
+            $('alarmTimeDisplay').style.color = 'var(--success)';
+            $('statusMsg').textContent = d.success;
+            $('statusMsg').style.color = 'var(--success)';
+            $('alarmLabelDisplay').textContent = currentAlarmLabel;
+            $('cancelAlarmBtn').style.display = 'inline-block';
+            $('keepOpenNote').textContent = d.keepOpen;
+            $('keepOpenNote').style.display = 'block';
+        } else {
+            $('alarmTimeDisplay').textContent = '--:--';
+            $('alarmTimeDisplay').style.color = 'var(--danger)';
+            $('statusMsg').textContent = d.ask;
+            $('statusMsg').style.color = 'var(--text-mut)';
+            $('alarmLabelDisplay').textContent = '';
+            $('cancelAlarmBtn').style.display = 'none';
+            $('keepOpenNote').style.display = 'none';
+        }
+    }
+
+    function confirmAlarm(event) {
+        if (event) event.preventDefault();
+        if (!pendingAlarmTime) return;
+        targetAlarmTime = pendingAlarmTime;
+        pendingAlarmTime = null;
+        currentAlarmLabel = $('alarmLabelInput').value.trim();
+        if (activeDays.size === 0) { activeDays = new Set([0,1,2,3,4,5,6]); renderDays(); }
+        lastFiredKey = '';
+        hideConfirmPanel();
+        renderAlarmState();
+        acquireWakeLock();
+        saveState();
+        playSuccessSound();
+        updateClock();
+    }
+
+    function retryListening(event) {
+        if (event) event.preventDefault();
+        pendingAlarmTime = null;
+        hideConfirmPanel();
+        setTimeout(() => startListening(), 150);
+    }
+
+    function cancelAlarm(event) {
+        if (event && event.preventDefault) event.preventDefault();
+        targetAlarmTime = null;
+        clearTimeout(snoozeTimeout);
+        releaseWakeLock();
+        renderAlarmState();
+        saveState();
+    }
+
+    function openManualPicker(event) {
+        if (event) event.preventDefault();
+        const input = $('manualTimeInput');
+        try { input.showPicker(); } catch (e) { input.focus(); input.click(); }
+    }
+    function handleManualTime() {
+        const input = $('manualTimeInput');
+        const val = input.value;
+        input.value = '';
+        if (!val) return;
+        const [h, m] = val.split(':').map(Number);
+        pendingAlarmTime = { hours: h, minutes: m };
+        showConfirmPanel(h, m);
+    }
+
+    // ---------- النغمات ----------
+    function handleAudioUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (customAudioPlayer) { customAudioPlayer.pause(); customAudioPlayer.currentTime = 0; }
+        if (customAudioURL) URL.revokeObjectURL(customAudioURL);
+        customAudioURL = URL.createObjectURL(file);
+        $('fileNameDisplay').textContent = '✅ ' + file.name;
+        $('fileNameDisplay').style.display = 'block';
+        $('testAudioBtn').style.display = 'block';
+    }
+
+    function testCustomAudio(event) {
+        if (event) event.preventDefault();
+        if (!customAudioURL) return;
+        if (customAudioPlayer) { customAudioPlayer.pause(); customAudioPlayer.currentTime = 0; }
+        customAudioPlayer = new Audio(customAudioURL);
+        customAudioPlayer.play().catch(() => {});
+        setTimeout(() => {
+            if (customAudioPlayer && !isAlarmRinging) { customAudioPlayer.pause(); customAudioPlayer.currentTime = 0; }
+        }, 3000);
+    }
+
+    function playBeep() {
+        const ctx = initAudio(); if (!ctx) return;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.start(); osc.stop(ctx.currentTime + 0.2);
+    }
+
+    function playSuccessSound() {
+        const ctx = initAudio(); if (!ctx) return;
+        [523, 659, 784].forEach((freq, i) => {
+            const t = ctx.currentTime + i * 0.1;
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, t);
+            gain.gain.linearRampToValueAtTime(0.1, t + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+            osc.start(t); osc.stop(t + 0.3);
+        });
+    }
+
+    // ---------- الرنين ----------
+    function startBeepLoop() {
+        const ctx = initAudio(); if (!ctx) return;
+        clearInterval(alarmInterval);
+        alarmInterval = setInterval(() => {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            osc.frequency.setValueAtTime(600, ctx.currentTime + 0.15);
+            const vol = settings.fadeIn ? currentAudioVolume * 0.4 : 0.4;
+            gain.gain.setValueAtTime(vol, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(); osc.stop(ctx.currentTime + 0.3);
+        }, 500);
+    }
+
+    function triggerAlarm() {
+        clearTimeout(snoozeTimeout);
+        isAlarmRinging = true;
+        $('ringingScreen').style.display = 'flex';
+        $('ringingLabel').textContent = currentAlarmLabel || locales[currentLang].wakeUp;
+
+        if (navigator.vibrate) {
+            navigator.vibrate([500, 300, 500]);
+            vibrateInterval = setInterval(() => navigator.vibrate([500, 300, 500]), 2500);
+        }
+
+        currentAudioVolume = settings.fadeIn ? 0.1 : 1.0;
+        clearInterval(volumeInterval);
+        if (settings.fadeIn) {
+            volumeInterval = setInterval(() => {
+                if (currentAudioVolume < 1.0) {
+                    currentAudioVolume = Math.min(1.0, currentAudioVolume + 0.05);
+                    if (customAudioPlayer && customAudioURL) customAudioPlayer.volume = currentAudioVolume;
+                }
+            }, 1000);
+        }
+
+        if (customAudioURL) {
+            if (customAudioPlayer) customAudioPlayer.pause();
+            customAudioPlayer = new Audio(customAudioURL);
+            customAudioPlayer.loop = true;
+            customAudioPlayer.volume = currentAudioVolume;
+            // إذا منع المتصفح التشغيل نرجع للنغمة الافتراضية
+            customAudioPlayer.play().catch(() => startBeepLoop());
+        } else {
+            startBeepLoop();
+        }
+
+        if (settings.shakeStop) {
+            lastX = lastY = lastZ = null;
+            window.addEventListener('devicemotion', handleShake);
+        }
+    }
+
+    function stopAllSounds() {
+        isAlarmRinging = false;
+        $('ringingScreen').style.display = 'none';
+        clearInterval(alarmInterval);
+        clearInterval(volumeInterval);
+        clearInterval(vibrateInterval);
+        if (customAudioPlayer) { customAudioPlayer.pause(); customAudioPlayer.currentTime = 0; }
+        if (navigator.vibrate) navigator.vibrate(0);
+        window.removeEventListener('devicemotion', handleShake);
+    }
+
+    // الإيقاف: المنبه يُلغى إن كان لمرة واحدة (كل الأيام)، ويبقى إن اخترت أياماً محددة
+    function dismissAlarm() {
+        stopAllSounds();
+        clearTimeout(snoozeTimeout);
+        if (activeDays.size >= 7) cancelAlarm();
+        else renderAlarmState();
+    }
+
+    function attemptStopAlarm() {
+        if (settings.mathStop) {
+            $('mathModal').style.display = 'flex';
+            generateMathProblem();
+        } else {
+            dismissAlarm();
+        }
+    }
+
+    function snoozeAlarm() {
+        stopAllSounds();
+        clearTimeout(snoozeTimeout);
+        const mins = settings.snoozeTime;
+        snoozeTimeout = setTimeout(triggerAlarm, mins * 60 * 1000);
+        $('statusMsg').textContent = locales[currentLang].snoozed.replace('{n}', mins);
+        $('statusMsg').style.color = 'var(--primary)';
+    }
+
+    // ---------- المعادلة ----------
+    function generateMathProblem() {
+        const a = Math.floor(Math.random() * 10) + 5;
+        const b = Math.floor(Math.random() * 10) + 5;
+        currentMathAnswer = a + b;
+        $('mathQuestion').textContent = a + ' + ' + b + ' = ?';
+        $('mathInput').value = '';
+        setTimeout(() => $('mathInput').focus(), 50);
+    }
+    function checkMath() {
+        const val = parseInt($('mathInput').value);
+        if (val === currentMathAnswer) {
+            $('mathModal').style.display = 'none';
+            dismissAlarm();
+        } else {
+            $('mathQuestion').style.color = '#ff4757';
+            setTimeout(() => $('mathQuestion').style.color = 'white', 500);
+            $('mathInput').value = '';
+        }
+    }
+    $('mathInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkMath(); });
+
+    // ---------- الهز ----------
+    function handleShake(event) {
+        if (!isAlarmRinging) return;
+        const a = event.accelerationIncludingGravity;
+        if (!a || a.x == null) return;
+        if (lastX !== null) {
+            const dx = Math.abs(lastX - a.x), dy = Math.abs(lastY - a.y), dz = Math.abs(lastZ - a.z);
+            if ((dx > 15 && dy > 15) || dx > 20 || dy > 20 || dz > 20) {
+                if (settings.mathStop) attemptStopAlarm(); else dismissAlarm();
+            }
+        }
+        lastX = a.x; lastY = a.y; lastZ = a.z;
+    }
+
+    // ---------- اللغة ----------
+    function applyLanguage() {
+        const d = locales[currentLang];
+        $('langSelect').value = currentLang;
+        $('hintText').textContent = d.hint;
+        $('cancelAlarmBtn').textContent = d.cancel;
+        $('lblConfirm').textContent = d.confirmMsg;
+        $('confirmBtn').textContent = d.confirmBtn;
+        $('retryBtn').textContent = d.retryBtn;
+        $('manualBtn').textContent = d.manual;
+        $('alarmLabelInput').placeholder = d.lblPlaceholder;
+        $('uploadLabel').textContent = d.upload;
+        $('testAudioBtn').textContent = d.test;
+        $('snoozeBtn').textContent = d.snoozeBtn;
+        $('stopBtn').textContent = d.stopBtn;
+        $('mathSubmit').textContent = d.confirmTitle;
+        $('settingsTitle').textContent = d.settings;
+        document.querySelectorAll('[data-i]').forEach(el => { el.textContent = d[el.dataset.i]; });
+        document.documentElement.lang = currentLang.split('-')[0];
+        document.documentElement.dir = currentLang === 'ar-SA' ? 'rtl' : 'ltr';
+        renderDays();
+        renderAlarmState();
+    }
+
+    function changeLanguage() {
+        currentLang = $('langSelect').value;
+        applyLanguage();
+        updateClock();
+        saveState();
+    }
+
+    loadState();
+    applyTheme();
+    applyLanguage();
+    updateClock();
+    if (targetAlarmTime) acquireWakeLock();
+</script>
+</body>
+</html>

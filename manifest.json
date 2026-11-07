@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Global VoxAlarm Pro",
+  "short_name": "VoxAlarm",
+  "description": "منبه صوتي: تكلم ليضبط منبهك. Speak to set your alarm.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#a8edea",
+  "theme_color": "#66a6ff",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
